@@ -3,5 +3,5 @@ __pycache__/
 .pytest_cache/
 *.pyc
 *.log
+!examples/access.log
 backups/
-
