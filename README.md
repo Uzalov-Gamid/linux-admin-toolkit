@@ -17,6 +17,7 @@ Small toolkit for Linux administration practice. It includes Bash and Python uti
 chmod +x scripts/*.sh
 scripts/disk-report.sh .
 scripts/process-report.sh
+scripts/process-report.sh 5
 scripts/log-summary.sh examples/access.log
 ```
 
@@ -53,7 +54,8 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements-dev.txt
 pytest
-bash -n scripts/*.sh
+bash -n scripts/*.sh tests/*.sh
+bash tests/test_scripts.sh
 ```
 
 ## What this MVP demonstrates
@@ -62,4 +64,3 @@ bash -n scripts/*.sh
 - Bash scripting with safe defaults
 - Python log parsing
 - Basic CI checks for scripts and tests
-
