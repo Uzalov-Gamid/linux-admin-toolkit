@@ -17,14 +17,15 @@ def analyze_log(path: Path) -> dict[str, Any]:
     paths: Counter[str] = Counter()
     total = 0
 
-    for line in path.read_text(encoding="utf-8").splitlines():
-        match = LOG_PATTERN.match(line)
-        if not match:
-            continue
-        total += 1
-        status_codes[match.group("status")] += 1
-        methods[match.group("method")] += 1
-        paths[match.group("path")] += 1
+    with path.open(encoding="utf-8") as log_file:
+        for line in log_file:
+            match = LOG_PATTERN.match(line)
+            if not match:
+                continue
+            total += 1
+            status_codes[match.group("status")] += 1
+            methods[match.group("method")] += 1
+            paths[match.group("path")] += 1
 
     return {
         "total_requests": total,
