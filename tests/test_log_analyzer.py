@@ -54,3 +54,24 @@ def test_cli_reports_invalid_encoding_without_traceback(tmp_path):
     assert result.returncode == 1
     assert "cannot read log:" in result.stderr
     assert "Traceback" not in result.stderr
+
+
+def test_truncated_compressed_log_reports_a_read_error(tmp_path):
+    import gzip
+    import subprocess
+    import sys
+    path = tmp_path / "truncated.gz"
+    path.write_bytes(gzip.compress(Path("examples/access.log").read_bytes())[:-5])
+    result = subprocess.run([sys.executable, "-m", "toolkit.log_analyzer", str(path)], capture_output=True, text=True)
+    assert result.returncode == 1
+    assert "cannot read log" in result.stderr
+    assert "Traceback" not in result.stderr
+
+
+def test_gzip_and_plain_logs_produce_identical_summaries(tmp_path):
+    import gzip
+    source = Path("examples/access.log")
+    compressed = tmp_path / "access.log.gz"
+    with gzip.open(compressed, "wb") as output:
+        output.write(source.read_bytes())
+    assert analyze_log(compressed) == analyze_log(source)

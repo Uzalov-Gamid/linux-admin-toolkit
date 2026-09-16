@@ -1,4 +1,5 @@
 import argparse
+import gzip
 import json
 import re
 import sys
@@ -20,7 +21,8 @@ def analyze_log(path: Path, top: int = 5) -> dict[str, Any]:
     paths: Counter[str] = Counter()
     total = 0
 
-    with path.open(encoding="utf-8") as log_file:
+    opener = gzip.open if path.suffix == ".gz" else open
+    with opener(path, "rt", encoding="utf-8") as log_file:
         for line in log_file:
             match = LOG_PATTERN.match(line)
             if not match:
@@ -53,7 +55,7 @@ def main() -> int:
 
     try:
         result = analyze_log(path, top=args.top)
-    except (OSError, UnicodeError) as error:
+    except (OSError, UnicodeError, EOFError) as error:
         print(f"cannot read log: {error}", file=sys.stderr)
         return 1
     print(json.dumps(result, indent=2, sort_keys=True))
