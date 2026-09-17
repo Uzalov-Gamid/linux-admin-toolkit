@@ -18,9 +18,12 @@ mkdir -p "$backup_dir"
 
 source_name=$(basename "$source_dir")
 timestamp=$(date +"%Y%m%d-%H%M%S")
-archive="$backup_dir/${source_name}-${timestamp}.tar.gz"
+archive=$(mktemp "$backup_dir/${source_name}-${timestamp}-XXXXXX")
+trap 'rm -f "$archive"' EXIT
 
 tar --exclude=".git" --exclude="__pycache__" -czf "$archive" -C "$(dirname "$source_dir")" "$source_name"
 
-echo "$archive"
+mv "$archive" "$archive.tar.gz"
+trap - EXIT
+echo "$archive.tar.gz"
 
