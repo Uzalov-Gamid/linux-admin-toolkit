@@ -1,5 +1,7 @@
 import argparse
 import gzip
+from contextlib import nullcontext
+from typing import Optional
 import json
 import re
 import sys
@@ -13,7 +15,7 @@ LOG_PATTERN = re.compile(
 )
 
 
-def analyze_log(path: Path, top: int = 5) -> dict[str, Any]:
+def analyze_log(path: Optional[Path], top: int = 5) -> dict[str, Any]:
     if top < 1:
         raise ValueError("top must be a positive integer")
     status_codes: Counter[str] = Counter()
@@ -21,8 +23,9 @@ def analyze_log(path: Path, top: int = 5) -> dict[str, Any]:
     paths: Counter[str] = Counter()
     total = 0
 
-    opener = gzip.open if path.suffix == ".gz" else open
-    with opener(path, "rt", encoding="utf-8") as log_file:
+    opener = gzip.open if path is not None and path.suffix == ".gz" else open
+    source = nullcontext(sys.stdin) if path is None else opener(path, "rt", encoding="utf-8")
+    with source as log_file:
         for line in log_file:
             match = LOG_PATTERN.match(line)
             if not match:
@@ -48,8 +51,8 @@ def main() -> int:
     if args.top < 1:
         parser.error("--top must be a positive integer")
 
-    path = args.path
-    if not path.exists():
+    path = None if str(args.path) == "-" else args.path
+    if path is not None and not path.exists():
         print(f"file not found: {path}", file=sys.stderr)
         return 1
 

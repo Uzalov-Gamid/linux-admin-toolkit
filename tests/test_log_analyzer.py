@@ -75,3 +75,12 @@ def test_gzip_and_plain_logs_produce_identical_summaries(tmp_path):
     with gzip.open(compressed, "wb") as output:
         output.write(source.read_bytes())
     assert analyze_log(compressed) == analyze_log(source)
+
+
+def test_cli_reads_piped_logs_from_stdin():
+    import json
+    import subprocess
+    import sys
+    source = Path("examples/access.log")
+    output = subprocess.check_output([sys.executable, "-m", "toolkit.log_analyzer", "-"], input=source.read_text(), text=True)
+    assert json.loads(output) == analyze_log(source)
