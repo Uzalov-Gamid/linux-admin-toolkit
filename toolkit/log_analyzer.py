@@ -22,6 +22,7 @@ def analyze_log(path: Optional[Path], top: int = 5) -> dict[str, Any]:
     methods: Counter[str] = Counter()
     paths: Counter[str] = Counter()
     total = 0
+    ignored = 0
 
     opener = gzip.open if path is not None and path.suffix == ".gz" else open
     source = nullcontext(sys.stdin) if path is None else opener(path, "rt", encoding="utf-8")
@@ -29,6 +30,7 @@ def analyze_log(path: Optional[Path], top: int = 5) -> dict[str, Any]:
         for line in log_file:
             match = LOG_PATTERN.match(line)
             if not match:
+                ignored += 1
                 continue
             total += 1
             status_codes[match.group("status")] += 1
@@ -37,6 +39,7 @@ def analyze_log(path: Optional[Path], top: int = 5) -> dict[str, Any]:
 
     return {
         "total_requests": total,
+        "ignored_lines": ignored,
         "status_codes": dict(status_codes.most_common()),
         "methods": dict(methods.most_common()),
         "top_paths": dict(paths.most_common(top)),

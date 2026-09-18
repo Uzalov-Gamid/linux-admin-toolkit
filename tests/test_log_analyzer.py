@@ -84,3 +84,11 @@ def test_cli_reads_piped_logs_from_stdin():
     source = Path("examples/access.log")
     output = subprocess.check_output([sys.executable, "-m", "toolkit.log_analyzer", "-"], input=source.read_text(), text=True)
     assert json.loads(output) == analyze_log(source)
+
+
+def test_ignored_lines_are_reported_instead_of_silently_lost(tmp_path):
+    log = tmp_path / "mixed.log"
+    log.write_text(Path("examples/access.log").read_text() + "bad line\n\n")
+    result = analyze_log(log)
+    assert result["total_requests"] == 6
+    assert result["ignored_lines"] == analyze_log(Path("examples/access.log"))["ignored_lines"] + 2
