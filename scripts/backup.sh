@@ -16,6 +16,15 @@ fi
 
 mkdir -p "$backup_dir"
 
+source_dir=$(cd "$source_dir" && pwd -P)
+backup_dir=$(cd "$backup_dir" && pwd -P)
+case "$backup_dir/" in
+  "$source_dir/"*)
+    echo "backup directory must be outside the source directory" >&2
+    exit 2
+    ;;
+esac
+
 source_name=$(basename "$source_dir")
 timestamp=$(date +"%Y%m%d-%H%M%S")
 archive=$(mktemp "$backup_dir/${source_name}-${timestamp}-XXXXXX")

@@ -18,3 +18,12 @@ def test_repeated_backup_preserves_both_archives(tmp_path):
         with tarfile.open(archive) as saved:
             assert saved.extractfile(source.name + "/note.txt").read() == expected
     assert len(list(dest.iterdir())) == 2
+
+
+def test_backup_rejects_nested_destination(tmp_path):
+    source = tmp_path / "source"
+    source.mkdir()
+    result = subprocess.run(["bash", str(SCRIPT), str(source), str(source / "backups")], capture_output=True, text=True)
+    assert result.returncode == 2
+    assert "outside the source" in result.stderr
+    assert not list(source.rglob("*.tar.gz"))
