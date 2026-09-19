@@ -21,6 +21,7 @@ def analyze_log(path: Optional[Path], top: int = 5) -> dict[str, Any]:
     status_codes: Counter[str] = Counter()
     methods: Counter[str] = Counter()
     paths: Counter[str] = Counter()
+    clients: Counter[str] = Counter()
     total = 0
     ignored = 0
 
@@ -33,6 +34,7 @@ def analyze_log(path: Optional[Path], top: int = 5) -> dict[str, Any]:
                 ignored += 1
                 continue
             total += 1
+            clients[match.group("ip")] += 1
             status_codes[match.group("status")] += 1
             methods[match.group("method")] += 1
             paths[match.group("path")] += 1
@@ -43,6 +45,7 @@ def analyze_log(path: Optional[Path], top: int = 5) -> dict[str, Any]:
         "status_codes": dict(status_codes.most_common()),
         "methods": dict(methods.most_common()),
         "top_paths": dict(paths.most_common(top)),
+        "top_clients": dict(clients.most_common(top)),
     }
 
 

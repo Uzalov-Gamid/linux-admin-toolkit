@@ -92,3 +92,9 @@ def test_ignored_lines_are_reported_instead_of_silently_lost(tmp_path):
     result = analyze_log(log)
     assert result["total_requests"] == 6
     assert result["ignored_lines"] == analyze_log(Path("examples/access.log"))["ignored_lines"] + 2
+
+
+def test_client_totals_cover_all_requests():
+    result = analyze_log(Path("examples/access.log"), top=100)
+    assert sum(result["top_clients"].values()) == result["total_requests"]
+    assert len(analyze_log(Path("examples/access.log"), top=1)["top_clients"]) == 1
