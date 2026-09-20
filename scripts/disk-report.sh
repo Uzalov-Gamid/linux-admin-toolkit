@@ -2,6 +2,7 @@
 set -euo pipefail
 
 target=${1:-.}
+if [[ "$target" == -* ]]; then target="./$target"; fi
 
 if [[ ! -e "$target" ]]; then
   echo "target not found: $target" >&2
@@ -9,7 +10,7 @@ if [[ ! -e "$target" ]]; then
 fi
 
 echo "Filesystem usage:"
-df -h .
+df -h "$target"
 
 echo
 echo "Target usage:"
@@ -17,5 +18,13 @@ du -sh "$target"
 
 echo
 echo "Largest entries:"
-du -sh "$target"/* 2>/dev/null | sort -hr | head -10 || true
+if [[ -d "$target" ]]; then
+  shopt -s nullglob dotglob
+  entries=("$target"/*)
+  if (( ${#entries[@]} )); then
+    du -sh "${entries[@]}" | sort -hr | sed -n '1,10p'
+  fi
+else
+  du -sh "$target"
+fi
 
