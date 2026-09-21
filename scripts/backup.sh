@@ -14,6 +14,15 @@ if [[ ! -d "$source_dir" ]]; then
   exit 1
 fi
 
+tar_args=(--exclude=".git" --exclude="__pycache__")
+if [[ -n "${BACKUP_EXCLUDES_FILE:-}" ]]; then
+  if [[ ! -r "$BACKUP_EXCLUDES_FILE" ]]; then
+    echo "exclude file is not readable: $BACKUP_EXCLUDES_FILE" >&2
+    exit 2
+  fi
+  tar_args+=(--exclude-from="$BACKUP_EXCLUDES_FILE")
+fi
+
 mkdir -p "$backup_dir"
 
 source_dir=$(cd "$source_dir" && pwd -P)
@@ -30,7 +39,7 @@ timestamp=$(date +"%Y%m%d-%H%M%S")
 archive=$(mktemp "$backup_dir/${source_name}-${timestamp}-XXXXXX")
 trap 'rm -f "$archive"' EXIT
 
-tar --exclude=".git" --exclude="__pycache__" -czf "$archive" -C "$(dirname "$source_dir")" "$source_name"
+tar "${tar_args[@]}" -czf "$archive" -C "$(dirname "$source_dir")" "$source_name"
 
 mv "$archive" "$archive.tar.gz"
 trap - EXIT
