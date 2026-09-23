@@ -1,3 +1,4 @@
+import argparse
 import json
 import re
 import sys
@@ -11,7 +12,9 @@ LOG_PATTERN = re.compile(
 )
 
 
-def analyze_log(path: Path) -> dict[str, Any]:
+def analyze_log(path: Path, top: int = 5) -> dict[str, Any]:
+    if top < 1:
+        raise ValueError("top must be a positive integer")
     status_codes: Counter[str] = Counter()
     methods: Counter[str] = Counter()
     paths: Counter[str] = Counter()
@@ -31,21 +34,24 @@ def analyze_log(path: Path) -> dict[str, Any]:
         "total_requests": total,
         "status_codes": dict(status_codes.most_common()),
         "methods": dict(methods.most_common()),
-        "top_paths": dict(paths.most_common(5)),
+        "top_paths": dict(paths.most_common(top)),
     }
 
 
 def main() -> int:
-    if len(sys.argv) != 2:
-        print("usage: python -m toolkit.log_analyzer <access.log>", file=sys.stderr)
-        return 2
+    parser = argparse.ArgumentParser(description="Summarize HTTP access logs")
+    parser.add_argument("path", type=Path)
+    parser.add_argument("--top", type=int, default=5, help="Number of paths to show")
+    args = parser.parse_args()
+    if args.top < 1:
+        parser.error("--top must be a positive integer")
 
-    path = Path(sys.argv[1])
+    path = args.path
     if not path.exists():
         print(f"file not found: {path}", file=sys.stderr)
         return 1
 
-    print(json.dumps(analyze_log(path), indent=2, sort_keys=True))
+    print(json.dumps(analyze_log(path, top=args.top), indent=2, sort_keys=True))
     return 0
 
 

@@ -30,3 +30,16 @@ def test_analyzer_streams_file_without_read_text(tmp_path, monkeypatch):
     result = analyze_log(log)
     assert result["total_requests"] == 2
     assert result["top_paths"] == {"/hello": 2}
+
+
+def test_custom_top_path_limit():
+    result = analyze_log(Path("examples/access.log"), top=1)
+    assert result["top_paths"] == {"/api/tasks": 3}
+
+
+def test_cli_rejects_invalid_top():
+    import subprocess
+    import sys
+    result = subprocess.run([sys.executable, "-m", "toolkit.log_analyzer", "examples/access.log", "--top", "0"], capture_output=True, text=True)
+    assert result.returncode == 2
+    assert "positive integer" in result.stderr
