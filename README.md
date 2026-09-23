@@ -40,7 +40,8 @@ Example output:
 {
   "total_requests": 6,
   "status_codes": {
-    "200": 4,
+    "200": 3,
+    "201": 1,
     "404": 1,
     "500": 1
   }
@@ -64,3 +65,8 @@ bash tests/test_scripts.sh
 - Bash scripting with safe defaults
 - Python log parsing
 - Basic CI checks for scripts and tests
+
+## Guides
+
+- [Backup and restore](docs/backups.md)
+- [Log formats, options and exit codes](docs/log-analysis.md)
