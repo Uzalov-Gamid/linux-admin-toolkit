@@ -9,6 +9,9 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ["3.9", "3.12"]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -16,13 +19,16 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ matrix.python }}
 
       - name: Install dependencies
         run: pip install -r requirements-dev.txt
 
       - name: Check shell syntax
-        run: bash -n scripts/*.sh tests/*.sh
+        run: |
+          for script in scripts/*.sh tests/*.sh; do
+            bash -n "$script"
+          done
 
       - name: Test shell scripts
         run: bash tests/test_scripts.sh
