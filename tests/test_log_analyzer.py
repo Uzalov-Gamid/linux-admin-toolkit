@@ -43,3 +43,14 @@ def test_cli_rejects_invalid_top():
     result = subprocess.run([sys.executable, "-m", "toolkit.log_analyzer", "examples/access.log", "--top", "0"], capture_output=True, text=True)
     assert result.returncode == 2
     assert "positive integer" in result.stderr
+
+
+def test_cli_reports_invalid_encoding_without_traceback(tmp_path):
+    import subprocess
+    import sys
+    log = tmp_path / "broken.log"
+    log.write_bytes(b"\xff\xfe")
+    result = subprocess.run([sys.executable, "-m", "toolkit.log_analyzer", str(log)], capture_output=True, text=True)
+    assert result.returncode == 1
+    assert "cannot read log:" in result.stderr
+    assert "Traceback" not in result.stderr

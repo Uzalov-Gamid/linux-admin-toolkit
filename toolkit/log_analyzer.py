@@ -51,7 +51,12 @@ def main() -> int:
         print(f"file not found: {path}", file=sys.stderr)
         return 1
 
-    print(json.dumps(analyze_log(path, top=args.top), indent=2, sort_keys=True))
+    try:
+        result = analyze_log(path, top=args.top)
+    except (OSError, UnicodeError) as error:
+        print(f"cannot read log: {error}", file=sys.stderr)
+        return 1
+    print(json.dumps(result, indent=2, sort_keys=True))
     return 0
 
 
