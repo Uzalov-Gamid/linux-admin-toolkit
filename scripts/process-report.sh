@@ -8,9 +8,14 @@ if [[ ! "$limit" =~ ^[1-9][0-9]*$ ]]; then
   exit 2
 fi
 
+snapshot=$(ps aux)
+header=$(printf '%s\n' "$snapshot" | sed -n '1p')
+
 echo "Top processes by CPU:"
-ps aux | sort -rk 3,3 | head -n "$((limit + 1))"
+printf '%s\n' "$header"
+printf '%s\n' "$snapshot" | sed '1d' | sort -k3,3nr | sed -n "1,${limit}p"
 
 echo
 echo "Top processes by memory:"
-ps aux | sort -rk 4,4 | head -n "$((limit + 1))"
+printf '%s\n' "$header"
+printf '%s\n' "$snapshot" | sed '1d' | sort -k4,4nr | sed -n "1,${limit}p"
