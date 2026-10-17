@@ -54,3 +54,47 @@ def test_cli_reports_invalid_encoding_without_traceback(tmp_path):
     assert result.returncode == 1
     assert "cannot read log:" in result.stderr
     assert "Traceback" not in result.stderr
+
+
+def test_truncated_compressed_log_reports_a_read_error(tmp_path):
+    import gzip
+    import subprocess
+    import sys
+    path = tmp_path / "truncated.gz"
+    path.write_bytes(gzip.compress(Path("examples/access.log").read_bytes())[:-5])
+    result = subprocess.run([sys.executable, "-m", "toolkit.log_analyzer", str(path)], capture_output=True, text=True)
+    assert result.returncode == 1
+    assert "cannot read log" in result.stderr
+    assert "Traceback" not in result.stderr
+
+
+def test_gzip_and_plain_logs_produce_identical_summaries(tmp_path):
+    import gzip
+    source = Path("examples/access.log")
+    compressed = tmp_path / "access.log.gz"
+    with gzip.open(compressed, "wb") as output:
+        output.write(source.read_bytes())
+    assert analyze_log(compressed) == analyze_log(source)
+
+
+def test_cli_reads_piped_logs_from_stdin():
+    import json
+    import subprocess
+    import sys
+    source = Path("examples/access.log")
+    output = subprocess.check_output([sys.executable, "-m", "toolkit.log_analyzer", "-"], input=source.read_text(), text=True)
+    assert json.loads(output) == analyze_log(source)
+
+
+def test_ignored_lines_are_reported_instead_of_silently_lost(tmp_path):
+    log = tmp_path / "mixed.log"
+    log.write_text(Path("examples/access.log").read_text() + "bad line\n\n")
+    result = analyze_log(log)
+    assert result["total_requests"] == 6
+    assert result["ignored_lines"] == analyze_log(Path("examples/access.log"))["ignored_lines"] + 2
+
+
+def test_client_totals_cover_all_requests():
+    result = analyze_log(Path("examples/access.log"), top=100)
+    assert sum(result["top_clients"].values()) == result["total_requests"]
+    assert len(analyze_log(Path("examples/access.log"), top=1)["top_clients"]) == 1

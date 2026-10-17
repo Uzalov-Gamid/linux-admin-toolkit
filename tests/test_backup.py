@@ -27,3 +27,18 @@ def test_backup_rejects_nested_destination(tmp_path):
     assert result.returncode == 2
     assert "outside the source" in result.stderr
     assert not list(source.rglob("*.tar.gz"))
+
+
+def test_backup_respects_custom_excludes(tmp_path):
+    import os
+    source = tmp_path / "source"
+    source.mkdir()
+    (source / "private.env").write_text("private")
+    (source / "public.txt").write_text("public")
+    excludes = tmp_path / "excludes"
+    excludes.write_text("*/private.env\n")
+    env = dict(os.environ, BACKUP_EXCLUDES_FILE=str(excludes))
+    archive = subprocess.check_output(["bash", str(SCRIPT), str(source), str(tmp_path / "backups")], env=env, text=True).strip()
+    with tarfile.open(archive) as saved:
+        assert "source/public.txt" in saved.getnames()
+        assert "source/private.env" not in saved.getnames()

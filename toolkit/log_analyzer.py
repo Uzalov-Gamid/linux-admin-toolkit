@@ -1,4 +1,7 @@
 import argparse
+import gzip
+from contextlib import nullcontext
+from typing import Optional
 import json
 import re
 import sys
@@ -12,29 +15,37 @@ LOG_PATTERN = re.compile(
 )
 
 
-def analyze_log(path: Path, top: int = 5) -> dict[str, Any]:
+def analyze_log(path: Optional[Path], top: int = 5) -> dict[str, Any]:
     if top < 1:
         raise ValueError("top must be a positive integer")
     status_codes: Counter[str] = Counter()
     methods: Counter[str] = Counter()
     paths: Counter[str] = Counter()
+    clients: Counter[str] = Counter()
     total = 0
+    ignored = 0
 
-    with path.open(encoding="utf-8") as log_file:
+    opener = gzip.open if path is not None and path.suffix == ".gz" else open
+    source = nullcontext(sys.stdin) if path is None else opener(path, "rt", encoding="utf-8")
+    with source as log_file:
         for line in log_file:
             match = LOG_PATTERN.match(line)
             if not match:
+                ignored += 1
                 continue
             total += 1
+            clients[match.group("ip")] += 1
             status_codes[match.group("status")] += 1
             methods[match.group("method")] += 1
             paths[match.group("path")] += 1
 
     return {
         "total_requests": total,
+        "ignored_lines": ignored,
         "status_codes": dict(status_codes.most_common()),
         "methods": dict(methods.most_common()),
         "top_paths": dict(paths.most_common(top)),
+        "top_clients": dict(clients.most_common(top)),
     }
 
 
@@ -46,14 +57,14 @@ def main() -> int:
     if args.top < 1:
         parser.error("--top must be a positive integer")
 
-    path = args.path
-    if not path.exists():
+    path = None if str(args.path) == "-" else args.path
+    if path is not None and not path.exists():
         print(f"file not found: {path}", file=sys.stderr)
         return 1
 
     try:
         result = analyze_log(path, top=args.top)
-    except (OSError, UnicodeError) as error:
+    except (OSError, UnicodeError, EOFError) as error:
         print(f"cannot read log: {error}", file=sys.stderr)
         return 1
     print(json.dumps(result, indent=2, sort_keys=True))
